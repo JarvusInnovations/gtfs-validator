@@ -21,9 +21,11 @@ import org.mobilitydata.gtfsvalidator.annotation.EndRange;
 import org.mobilitydata.gtfsvalidator.annotation.FieldType;
 import org.mobilitydata.gtfsvalidator.annotation.FieldTypeEnum;
 import org.mobilitydata.gtfsvalidator.annotation.GtfsTable;
+import org.mobilitydata.gtfsvalidator.annotation.Recommended;
 import org.mobilitydata.gtfsvalidator.annotation.Required;
 import org.mobilitydata.gtfsvalidator.type.GtfsDate;
 
+@Recommended
 @GtfsTable(value = "feed_info.txt", singleRow = true)
 public interface GtfsFeedInfoSchema extends GtfsEntity {
   @Required
@@ -38,16 +40,21 @@ public interface GtfsFeedInfoSchema extends GtfsEntity {
 
   Locale defaultLang();
 
+  @Recommended
   @EndRange(field = "feed_end_date", allowEqual = true)
   GtfsDate feedStartDate();
 
+  @Recommended
   GtfsDate feedEndDate();
 
+  @Recommended
   String feedVersion();
 
+  @Recommended
   @FieldType(FieldTypeEnum.EMAIL)
   String feedContactEmail();
 
+  @Recommended
   @FieldType(FieldTypeEnum.URL)
   String feedContactUrl();
 }
