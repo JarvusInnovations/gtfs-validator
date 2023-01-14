@@ -9,13 +9,11 @@
   import { fly } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
 
-  import axios from 'axios';
-
-  /** @type {import('./$types').PageData} */
-  export let data;
-
   let allowUrl = false;
   let showDocs = true;
+
+  /** @type {string} */
+  let jobId
 
   /** @type {string[]} */
   let errors = [];
@@ -93,23 +91,91 @@
     handleFiles(event.target.file.files);
   }
 
+  function getUrl() {
+    return new Promise((resolve, reject) => {
+      const data = null;
+
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = 'json';
+      xhr.onerror = reject;
+      xhr.addEventListener('readystatechange', function () {
+        if (this.readyState === this.DONE) {
+          resolve(this.response);
+        }
+      });
+
+      xhr.open('GET', 'https://gtfs-validator-web-mbzoxaljzq-ue.a.run.app/upload-url');
+      xhr.send(data);
+    });
+  }
+
+  /** @param {string} status */
+  function updateStatus (status) {
+    // TODO update html
+    // const status = document.getElementById('status');
+    // status.innerHTML = `${status}...<br/><img src="/img/loader.svg" alt="loading indicator">`
+    console.log(status);
+  }
+
+  /**
+   * @param {string} url
+   * @param {File} file
+  **/
+  function putFile(url, file) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = resolve;
+      xhr.onerror = reject;
+      xhr.open('PUT', url);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      xhr.send(file);
+    })
+  }
+
+  function getReportUrl() {
+    return `https://gtfs-validator-results.mobilitydata.org/${jobId}/report.html`
+  }
+
+  function reportExists() {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.addEventListener('readystatechange', function () {
+        if (this.readyState === this.DONE) {
+          resolve(xhr.status === 200)
+        }
+      });
+      xhr.onerror = reject;
+      xhr.open("HEAD", getReportUrl());
+      xhr.send();
+    });
+  }
+
+  /** @param {integer} ms */
+  function sleep(ms) {
+    return new Promise(res => setTimeout(res, ms));
+  }
+
   /** @param {File} file */
   async function uploadFile(file) {
-    // TODO fix this up (is FileReader necessary)
-    // TODO resolve CORS issues
-    // TODO improve UX
-    const reader = new FileReader();
-    console.log('uploading', file);
-    reader.readAsBinaryString(file);
-    reader.addEventListener('load', () => {
-      const raw = reader.result;
-      console.log('axios', axios);
-      axios.put(data.upload.url, {
-        headers: { 'Content-Type': 'application/octet-stream' },
-        data: raw,
-      });
-      console.log('data', raw);
-    });
+    updateStatus('Authorizing')
+    const result = await getUrl();
+    updateStatus('Uploading')
+    jobId = result.jobId
+    await putFile(result.url, file);
+    updateStatus('Processing')
+
+    let jobComplete = false
+    do {
+      jobComplete = await reportExists()
+      if (!jobComplete) {
+        await sleep(2500);
+      }
+    } while(!jobComplete)
+
+    const reportUrl = getReportUrl()
+    updateStatus(`Redirecting to your validation report or click <a href="${reportUrl}">here</a>.`);
+    window.open(reportUrl, '_blank');
   }
 </script>
 
@@ -120,7 +186,7 @@
 <div class="bg-mobi-light-gray">
   <DropTarget {handleDragOver} {handleDrop}>
     <div class="container">
-      <Form {handleSubmit} action={data.upload.url} method="PUT">
+      <Form {handleSubmit}>
         <h2 class="h3 text-center">
           Check the quality of a file {#if allowUrl}or a feed{/if}
         </h2>
