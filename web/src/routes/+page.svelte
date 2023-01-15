@@ -5,9 +5,12 @@
   import FileField from '$lib/forms/FileField.svelte';
   import Form from '$lib/forms/Form.svelte';
   import TextField from '$lib/forms/TextField.svelte';
+  import StatusModal from '$lib/StatusModal.svelte';
 
   import { fly } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
+
+  import { dev } from '$app/environment';
 
   let allowUrl = false;
   let showDocs = true;
@@ -20,6 +23,14 @@
 
   /** @type {string} */
   let pendingFilename = '';
+
+  /** @type {string} */
+  let status;
+
+  /** @type {HTMLDialogElement} */
+  let statusModal;
+
+  $: reportUrl = `https://gtfs-validator-results.mobilitydata.org/${jobId}/report.html`;
 
   function clearErrors() {
     errors = [];
@@ -42,7 +53,9 @@
 
     const files = event.dataTransfer?.files;
     if (files) {
-      if (files.length > 1) {
+      if (files.length < 1) {
+        errors.push('Sorry, you can only drop a ZIP file here.');
+      } else if (files.length > 1) {
         errors.push('Sorry, you must upload only one ZIP file.');
       } else {
         handleFile(files[0]);
@@ -109,12 +122,15 @@
     });
   }
 
-  /** @param {string} status */
-  function updateStatus (status) {
-    // TODO update html
-    // const status = document.getElementById('status');
-    // status.innerHTML = `${status}...<br/><img src="/img/loader.svg" alt="loading indicator">`
-    console.log(status);
+  /** @param {string} newStatus */
+  function updateStatus (newStatus) {
+    status = newStatus;
+
+    if (status != null) {
+      if (!statusModal.open) {
+        statusModal.showModal();
+      }
+    }
   }
 
   /**
@@ -132,10 +148,6 @@
     })
   }
 
-  function getReportUrl() {
-    return `https://gtfs-validator-results.mobilitydata.org/${jobId}/report.html`
-  }
-
   function reportExists() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -146,24 +158,24 @@
         }
       });
       xhr.onerror = reject;
-      xhr.open("HEAD", getReportUrl());
+      xhr.open("HEAD", reportUrl);
       xhr.send();
     });
   }
 
-  /** @param {integer} ms */
+  /** @param {number} ms */
   function sleep(ms) {
     return new Promise(res => setTimeout(res, ms));
   }
 
   /** @param {File} file */
   async function uploadFile(file) {
-    updateStatus('Authorizing')
+    updateStatus('authorizing');
     const result = await getUrl();
-    updateStatus('Uploading')
-    jobId = result.jobId
+    updateStatus('uploading');
+    jobId = result.jobId;
     await putFile(result.url, file);
-    updateStatus('Processing')
+    updateStatus('processing');
 
     let jobComplete = false
     do {
@@ -173,9 +185,7 @@
       }
     } while(!jobComplete)
 
-    const reportUrl = getReportUrl()
-    updateStatus(`Redirecting to your validation report or click <a href="${reportUrl}">here</a>.`);
-    window.open(reportUrl, '_blank');
+    updateStatus('ready');
   }
 </script>
 
@@ -244,3 +254,18 @@
     </div>
   </DropTarget>
 </div>
+
+<StatusModal bind:dialog={statusModal} bind:status reportUrl={reportUrl}></StatusModal>
+
+{#if dev}
+  <div class="m-4 p-4 border roun">
+    <h3 class="h3">Debug</h3>
+    <p>Status: {status}</p>
+    <div>
+      Set status:
+      {#each ['authorizing', 'uploading', 'processing', 'ready'] as status}
+        <Button handleClick={() => updateStatus(status)}>{status}</Button>
+      {/each}
+    </div>
+  </div>
+{/if}
