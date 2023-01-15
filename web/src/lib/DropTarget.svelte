@@ -61,7 +61,7 @@
 <style lang="postcss">
   .drop-target-overlay {
     @apply bg-mobi-light-blue/75 backdrop-blur-sm text-white;
-    @apply absolute w-full h-full;
+    @apply absolute w-full h-full z-10;
     @apply flex flex-col items-center justify-center;
   }
 </style>
