@@ -26,6 +26,7 @@
     'btn',
     `btn-${variant}`,
     disabled ? 'cursor-not-allowed opacity-60' : '',
+    'inline-block',
     'font-mono',
     'px-8 py-2',
     'rounded',
@@ -64,5 +65,10 @@
     @apply text-white;
     @apply border-b border-black/30;
     @apply shadow-mobi-purple;
+  }
+
+  .btn-link {
+    @apply bg-none border-0 shadow-none text-mobi-purple-safe;
+    @apply px-4;
   }
 </style>
