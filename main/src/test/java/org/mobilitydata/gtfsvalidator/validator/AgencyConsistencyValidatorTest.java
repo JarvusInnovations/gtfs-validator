@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mobilitydata.gtfsvalidator.notice.MissingRequiredFieldNotice;
 import org.mobilitydata.gtfsvalidator.notice.NoticeContainer;
+import org.mobilitydata.gtfsvalidator.notice.SeverityLevel;
 import org.mobilitydata.gtfsvalidator.notice.ValidationNotice;
 import org.mobilitydata.gtfsvalidator.table.GtfsAgency;
 import org.mobilitydata.gtfsvalidator.table.GtfsAgencyTableContainer;
@@ -62,10 +63,8 @@ public class AgencyConsistencyValidatorTest {
   }
 
   @Test
-  public void multipleAgenciesPresentButNoAgencyIdSetShouldGenerateNotice() {
-    assertThat(
-            generateNotices(
-                ImmutableList.of(
+  public void multipleAgenciesPresentButNoAgencyIdSetShouldGenerateErrorNotice() {
+    List<ValidationNotice> notices = generateNotices(ImmutableList.of(
                     createAgency(
                         0,
                         "first agency",
@@ -79,8 +78,9 @@ public class AgencyConsistencyValidatorTest {
                         "agency name",
                         "www.mobilitydata.org",
                         ZoneId.of("America/Montreal"),
-                        Locale.CANADA))))
-        .containsExactly(new MissingRequiredFieldNotice("agency.txt", 1, "agency_id"));
+                        Locale.CANADA)));
+    assertThat(notices).containsExactly(new MissingRequiredFieldNotice("agency.txt", 1, "agency_id"));
+    assertThat(notices.get(0).getSeverityLevel()).isEqualTo(SeverityLevel.ERROR);
   }
 
   @Test
