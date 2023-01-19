@@ -44,7 +44,7 @@ public class TripAgencyIdValidator extends FileValidator {
 
   @Override
   public void validate(NoticeContainer noticeContainer) {
-  // routes.agency_id is required when there is are multiple agencvies
+  // routes.agency_id is required when there is are multiple agencies
     if (agencyTable.entityCount() > 1) {
       for (GtfsRoute route : routeTable.getEntities()) {
         if (!route.hasAgencyId()) {
