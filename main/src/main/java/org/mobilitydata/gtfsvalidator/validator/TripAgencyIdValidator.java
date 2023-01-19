@@ -44,20 +44,21 @@ public class TripAgencyIdValidator extends FileValidator {
 
   @Override
   public void validate(NoticeContainer noticeContainer) {
-    if (agencyTable.entityCount() < 2) {
-      // routes.agency_id is not required when there is a single agency.
-      return;
-    }
-    for (GtfsRoute route : routeTable.getEntities()) {
-      if (!route.hasAgencyId()) {
-        noticeContainer.addValidationNotice(
-            new MissingRequiredFieldNotice(
-                routeTable.gtfsFilename(),
-                route.csvRowNumber(),
-                GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
+  // routes.agency_id is required when there is are multiple agencvies
+    if (agencyTable.entityCount() > 1) {
+      for (GtfsRoute route : routeTable.getEntities()) {
+        if (!route.hasAgencyId()) {
+          noticeContainer.addValidationNotice(
+                  new MissingRequiredFieldNotice(
+                          routeTable.gtfsFilename(),
+                          route.csvRowNumber(),
+                          GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
+        }
       }
+    }
+    else {
+    }
       // No need to check reference integrity because it is done by a validator generated from
       // @ForeignKey annotation.
-    }
   }
 }
