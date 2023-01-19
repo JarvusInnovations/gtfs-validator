@@ -20,45 +20,64 @@ import javax.inject.Inject;
 import org.mobilitydata.gtfsvalidator.annotation.GtfsValidator;
 import org.mobilitydata.gtfsvalidator.notice.MissingRequiredFieldNotice;
 import org.mobilitydata.gtfsvalidator.notice.NoticeContainer;
-import org.mobilitydata.gtfsvalidator.table.GtfsAgencyTableContainer;
-import org.mobilitydata.gtfsvalidator.table.GtfsRoute;
-import org.mobilitydata.gtfsvalidator.table.GtfsRouteTableContainer;
-import org.mobilitydata.gtfsvalidator.table.GtfsRouteTableLoader;
+import org.mobilitydata.gtfsvalidator.notice.SeverityLevel;
+import org.mobilitydata.gtfsvalidator.notice.ValidationNotice;
+import org.mobilitydata.gtfsvalidator.table.*;
 
 /**
  * Checks that agency_id field in "routes.txt" is defined for every row if there is more than 1
  * agency in the feed.
  *
  * <p>Generated notice: {@link MissingRequiredFieldNotice}.
+ * <p>Generated notice: {@link AgencyIdRecommendedNotice}.
  */
 @GtfsValidator
-public class TripAgencyIdValidator extends FileValidator {
+public class RouteAgencyIdValidator extends FileValidator {
   private final GtfsAgencyTableContainer agencyTable;
   private final GtfsRouteTableContainer routeTable;
 
   @Inject
-  TripAgencyIdValidator(GtfsAgencyTableContainer agencyTable, GtfsRouteTableContainer routeTable) {
+  RouteAgencyIdValidator(GtfsAgencyTableContainer agencyTable, GtfsRouteTableContainer routeTable) {
     this.agencyTable = agencyTable;
     this.routeTable = routeTable;
   }
 
   @Override
   public void validate(NoticeContainer noticeContainer) {
-  // routes.agency_id is required when there is are multiple agencies
-    if (agencyTable.entityCount() > 1) {
-      for (GtfsRoute route : routeTable.getEntities()) {
-        if (!route.hasAgencyId()) {
+
+    // routes.agency_id is required when there are multiple agencies
+    // or an agencyId is specified for single agency
+    boolean agencyIdRequired = (agencyTable.entityCount() > 1) || agencyTable.getEntities().get(0).hasAgencyId();
+
+    for (GtfsRoute route : routeTable.getEntities()) {
+      if (!route.hasAgencyId()) {
+        if (agencyIdRequired) {
           noticeContainer.addValidationNotice(
                   new MissingRequiredFieldNotice(
                           routeTable.gtfsFilename(),
                           route.csvRowNumber(),
                           GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
+        } else {
+          noticeContainer.addValidationNotice(
+                  new AgencyIdRecommendedNotice(
+                          route.csvRowNumber()));
         }
       }
     }
-    else {
-    }
       // No need to check reference integrity because it is done by a validator generated from
       // @ForeignKey annotation.
+  }
+  /**
+   * AgencyId field is recommended even if only one agency.
+   *
+   * <p>Severity: {@code SeverityLevel.WARNING}
+   */
+  static class AgencyIdRecommendedNotice extends ValidationNotice {
+    private final long csvRowNumber;
+
+    AgencyIdRecommendedNotice(long csvRowNumber) {
+      super(SeverityLevel.WARNING);
+      this.csvRowNumber = csvRowNumber;
+    }
   }
 }
