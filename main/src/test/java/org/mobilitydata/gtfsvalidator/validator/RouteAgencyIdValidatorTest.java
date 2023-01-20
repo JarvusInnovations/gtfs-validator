@@ -79,6 +79,6 @@ public class RouteAgencyIdValidatorTest {
             ImmutableList.of(createRoute(0, "route_0", null, "Route 0")), noticeContainer);
     new RouteAgencyIdValidator(agencyTable, routeTable).validate(noticeContainer);
     assertThat(noticeContainer.getValidationNotices())
-            .containsExactly(new RouteAgencyIdValidator.AgencyIdRecommendedNotice(0));
+        .containsExactly(new RouteAgencyIdValidator.AgencyIdRecommendedNotice(0));
   }
 }

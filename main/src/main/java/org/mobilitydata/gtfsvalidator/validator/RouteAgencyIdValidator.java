@@ -50,7 +50,7 @@ public class RouteAgencyIdValidator extends FileValidator {
     int totalAgencies = agencyTable.entityCount();
 
     for (GtfsRoute route : routeTable.getEntities()) {
-      if (!route.hasAgencyId())  {
+      if (!route.hasAgencyId()) {
         if (totalAgencies > 1) {
           // add error notice if more than one agency
           noticeContainer.addValidationNotice(
