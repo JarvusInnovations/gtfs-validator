@@ -47,19 +47,19 @@ public class RouteAgencyIdValidator extends FileValidator {
   public void validate(NoticeContainer noticeContainer) {
 
     // routes.agency_id is required when there are multiple agencies
-    // or an agencyId is specified for single agency
-    boolean agencyIdRequired =
-        (agencyTable.entityCount() > 1) || agencyTable.getEntities().get(0).hasAgencyId();
+    int totalAgencies = agencyTable.entityCount();
 
     for (GtfsRoute route : routeTable.getEntities()) {
-      if (!route.hasAgencyId()) {
-        if (agencyIdRequired) {
+      if (!route.hasAgencyId())  {
+        if (totalAgencies > 1) {
+          // add error notice if more than one agency
           noticeContainer.addValidationNotice(
               new MissingRequiredFieldNotice(
                   routeTable.gtfsFilename(),
                   route.csvRowNumber(),
                   GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
         } else {
+          // add warning notice if only one agency
           noticeContainer.addValidationNotice(new AgencyIdRecommendedNotice(route.csvRowNumber()));
         }
       }

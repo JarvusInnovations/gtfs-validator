@@ -68,7 +68,7 @@ public class RouteAgencyIdValidatorTest {
   }
 
   @Test
-  public void agencyIdErrorWhenOnlyOneAgencyWithAgencyId() {
+  public void agencyIdWarningWhenOnlyOneAgencyWithAgencyId() {
 
     NoticeContainer noticeContainer = new NoticeContainer();
     GtfsAgencyTableContainer agencyTable =
@@ -79,8 +79,6 @@ public class RouteAgencyIdValidatorTest {
             ImmutableList.of(createRoute(0, "route_0", null, "Route 0")), noticeContainer);
     new RouteAgencyIdValidator(agencyTable, routeTable).validate(noticeContainer);
     assertThat(noticeContainer.getValidationNotices())
-        .containsExactly(
-            new MissingRequiredFieldNotice(
-                routeTable.gtfsFilename(), 0, GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
+            .containsExactly(new RouteAgencyIdValidator.AgencyIdRecommendedNotice(0));
   }
 }
