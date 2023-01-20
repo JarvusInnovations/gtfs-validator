@@ -29,6 +29,7 @@ import org.mobilitydata.gtfsvalidator.table.*;
  * agency in the feed.
  *
  * <p>Generated notice: {@link MissingRequiredFieldNotice}.
+ *
  * <p>Generated notice: {@link AgencyIdRecommendedNotice}.
  */
 @GtfsValidator
@@ -47,25 +48,24 @@ public class RouteAgencyIdValidator extends FileValidator {
 
     // routes.agency_id is required when there are multiple agencies
     // or an agencyId is specified for single agency
-    boolean agencyIdRequired = (agencyTable.entityCount() > 1) || agencyTable.getEntities().get(0).hasAgencyId();
+    boolean agencyIdRequired =
+        (agencyTable.entityCount() > 1) || agencyTable.getEntities().get(0).hasAgencyId();
 
     for (GtfsRoute route : routeTable.getEntities()) {
       if (!route.hasAgencyId()) {
         if (agencyIdRequired) {
           noticeContainer.addValidationNotice(
-                  new MissingRequiredFieldNotice(
-                          routeTable.gtfsFilename(),
-                          route.csvRowNumber(),
-                          GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
+              new MissingRequiredFieldNotice(
+                  routeTable.gtfsFilename(),
+                  route.csvRowNumber(),
+                  GtfsRouteTableLoader.AGENCY_ID_FIELD_NAME));
         } else {
-          noticeContainer.addValidationNotice(
-                  new AgencyIdRecommendedNotice(
-                          route.csvRowNumber()));
+          noticeContainer.addValidationNotice(new AgencyIdRecommendedNotice(route.csvRowNumber()));
         }
       }
     }
-      // No need to check reference integrity because it is done by a validator generated from
-      // @ForeignKey annotation.
+    // No need to check reference integrity because it is done by a validator generated from
+    // @ForeignKey annotation.
   }
   /**
    * AgencyId field is recommended even if only one agency.

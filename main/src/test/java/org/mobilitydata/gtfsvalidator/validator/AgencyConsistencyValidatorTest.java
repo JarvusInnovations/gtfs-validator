@@ -64,36 +64,43 @@ public class AgencyConsistencyValidatorTest {
 
   @Test
   public void singleAgencyPresentButNoAgencyIdSetShouldGenerateWarningNotice() {
-    List<ValidationNotice> notices = generateNotices(ImmutableList.of(
-            createAgency(
+    List<ValidationNotice> notices =
+        generateNotices(
+            ImmutableList.of(
+                createAgency(
                     0,
                     null,
                     "agency name",
                     "www.mobilitydata.org",
                     ZoneId.of("America/Montreal"),
                     Locale.CANADA)));
-    assertThat(notices).containsExactly(new AgencyConsistencyValidator.AgencyIdRecommendedForSingleAgency( 0, "agency name"));
+    assertThat(notices)
+        .containsExactly(
+            new AgencyConsistencyValidator.AgencyIdRecommendedForSingleAgency(0, "agency name"));
     assertThat(notices.get(0).getSeverityLevel()).isEqualTo(SeverityLevel.WARNING);
   }
 
   @Test
   public void multipleAgenciesPresentButNoAgencyIdSetShouldGenerateErrorNotice() {
-    List<ValidationNotice> notices = generateNotices(ImmutableList.of(
-                    createAgency(
-                        0,
-                        "first agency",
-                        "agency name",
-                        "www.mobilitydata.org",
-                        ZoneId.of("America/Montreal"),
-                        Locale.CANADA),
-                    createAgency(
-                        1,
-                        null,
-                        "agency name",
-                        "www.mobilitydata.org",
-                        ZoneId.of("America/Montreal"),
-                        Locale.CANADA)));
-    assertThat(notices).containsExactly(new MissingRequiredFieldNotice("agency.txt", 1, "agency_id"));
+    List<ValidationNotice> notices =
+        generateNotices(
+            ImmutableList.of(
+                createAgency(
+                    0,
+                    "first agency",
+                    "agency name",
+                    "www.mobilitydata.org",
+                    ZoneId.of("America/Montreal"),
+                    Locale.CANADA),
+                createAgency(
+                    1,
+                    null,
+                    "agency name",
+                    "www.mobilitydata.org",
+                    ZoneId.of("America/Montreal"),
+                    Locale.CANADA)));
+    assertThat(notices)
+        .containsExactly(new MissingRequiredFieldNotice("agency.txt", 1, "agency_id"));
     assertThat(notices.get(0).getSeverityLevel()).isEqualTo(SeverityLevel.ERROR);
   }
 

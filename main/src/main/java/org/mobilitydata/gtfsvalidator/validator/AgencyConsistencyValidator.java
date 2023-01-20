@@ -57,9 +57,7 @@ public class AgencyConsistencyValidator extends FileValidator {
       // agency_id is recommended even when there is only 1 agency
       if (!agency.hasAgencyId()) {
         noticeContainer.addValidationNotice(
-                new AgencyIdRecommendedForSingleAgency(
-                        agency.csvRowNumber(),
-                        agency.agencyName()));
+            new AgencyIdRecommendedForSingleAgency(agency.csvRowNumber(), agency.agencyName()));
       }
       // no further validation required
       return;
