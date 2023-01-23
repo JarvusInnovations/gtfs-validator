@@ -256,16 +256,3 @@
 </div>
 
 <StatusModal bind:dialog={statusModal} bind:status reportUrl={reportUrl}></StatusModal>
-
-{#if dev}
-  <div class="m-4 p-4 border roun">
-    <h3 class="h3">Debug</h3>
-    <p>Status: {status}</p>
-    <div>
-      Set status:
-      {#each ['authorizing', 'uploading', 'processing', 'ready'] as status}
-        <Button handleClick={() => updateStatus(status)}>{status}</Button>
-      {/each}
-    </div>
-  </div>
-{/if}
