@@ -35,4 +35,18 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+## Deploying
+
+This app is currently hosted on Google Cloud Storage. To deploy these updates, first [install](https://cloud.google.com/sdk/docs/install-sdk) and [authenticate](https://cloud.google.com/sdk/gcloud/reference/auth) the `gcloud` command line interface.
+
+1. Build the production version of the app:
+
+```bash
+npm run build
+```
+
+2. Upload the app to Google Cloud Storage:
+
+```bash
+gcloud storage cp --recursive ./build/* gs://gtfs-validator-web/
+```
