@@ -1,6 +1,7 @@
 package org.mobilitydata.gtfsvalidator.validator;
 
 import com.google.common.collect.Multimaps;
+import com.google.common.flogger.FluentLogger;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,10 +30,13 @@ import org.mobilitydata.gtfsvalidator.util.ServiceIdIntersectionCache;
  * <p>Both trips have to be operating on the same service day, as determined by comparing the
  * service dates of the trips.
  *
- * <p>Generated notices: {@link BlockTripsWithOverlappingStopTimesNotice}.
+ * <p>Generated notices: {@link BlockTripsWithOverlappingStopTimesNotice}, {@link
+ * StopTimeTripWithoutTimesNotice}.
  */
 @GtfsValidator
 public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final GtfsTripTableContainer tripTable;
   private final GtfsStopTimeTableContainer stopTimeTable;
@@ -53,8 +57,10 @@ public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
 
   @Override
   public void validate(NoticeContainer noticeContainer) {
+    logger.atInfo().log("!!! BLOCKTRIPS WITH OVERLAPPING STOP TIMES VALIDATOR validate !!!");
     // If there are no trip or stop time entries, then we can stop right now.
     if (tripTable.entityCount() == 0 || stopTimeTable.entityCount() == 0) {
+      logger.atInfo().log("!!! NO STOP TIMES OR TRIP ENTITIES EXITING !!!");
       return;
     }
 
@@ -72,8 +78,10 @@ public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
             CalendarUtil.servicePeriodToServiceDatesMap(
                 CalendarUtil.buildServicePeriodMap(calendarTable, calendarDateTable)));
     for (List<GtfsTrip> tripsInBlock : Multimaps.asMap(tripTable.byBlockIdMap()).values()) {
+      logger.atInfo().log("!!! TRIPS IN BLOCK %d !!!", tripsInBlock.size());
       // We don't care about trips without a block id.
       if (!tripsInBlock.get(0).hasBlockId()) {
+        logger.atInfo().log("!!! no block id, continue !!!");
         continue;
       }
       // We need a first arrival time and a last departure time for each trip in the block to
@@ -81,7 +89,8 @@ public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
       // overlap.
       for (GtfsTripOverlap overlap :
           findOverlapIntervals(
-              constructOrderedTripIntervals(tripsInBlock), serviceIdIntersectionCache)) {
+              constructOrderedTripIntervals(tripsInBlock, noticeContainer),
+              serviceIdIntersectionCache)) {
         final GtfsTrip tripA = overlap.getTripA();
         final GtfsTrip tripB = overlap.getTripB();
         noticeContainer.addValidationNotice(
@@ -100,21 +109,36 @@ public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
    *
    * <p>Intervals are sorted by increasing first-arrival times, and then last-departure time.
    */
-  private List<GtfsTripInterval> constructOrderedTripIntervals(List<GtfsTrip> tripsInBlock) {
+  private List<GtfsTripInterval> constructOrderedTripIntervals(
+      List<GtfsTrip> tripsInBlock, NoticeContainer noticeContainer) {
     ArrayList<GtfsTripInterval> intervals = new ArrayList<>();
     intervals.ensureCapacity(tripsInBlock.size());
     for (GtfsTrip trip : tripsInBlock) {
       final List<GtfsStopTime> stopTimes = stopTimeTable.byTripId(trip.tripId());
+      logger.atInfo().log("!!! STOP TIMES %d !!!", stopTimes.size());
       if (stopTimes.isEmpty()) {
+        logger.atInfo().log("!!! INVALID TRIP WITHOUT STOP TIMES !!!");
         // Invalid trip without stop times is reported separately.
         continue;
       }
       GtfsStopTime firstStopTime = stopTimes.get(0);
       GtfsStopTime lastStopTime = stopTimes.get(stopTimes.size() - 1);
+
       if (!firstStopTime.hasArrivalTime()
           || !firstStopTime.hasDepartureTime()
           || !lastStopTime.hasArrivalTime()
           || !lastStopTime.hasDepartureTime()) {
+
+        for (var stop : new GtfsStopTime[] {firstStopTime, lastStopTime}) {
+          if (!stop.hasArrivalTime()) {
+            noticeContainer.addValidationNotice(
+                new StopTimeTripWithoutTimesNotice(stop, GtfsStopTime.ARRIVAL_TIME_FIELD_NAME));
+          }
+          if (!stop.hasDepartureTime()) {
+            noticeContainer.addValidationNotice(
+                new StopTimeTripWithoutTimesNotice(stop, GtfsStopTime.DEPARTURE_TIME_FIELD_NAME));
+          }
+        }
         continue;
       }
       intervals.add(
@@ -274,6 +298,27 @@ public class BlockTripsWithOverlappingStopTimesValidator extends FileValidator {
       this.serviceIdB = tripB.serviceId();
       this.blockId = tripA.blockId();
       this.intersection = intersection;
+    }
+  }
+
+  /**
+   * We can't generate the ERROR notice block_trips_with_overlapping_stop_times for the same trip
+   * because we are missing time information
+   *
+   * <p>Severity: {@code SeverityLevel.ERROR}
+   */
+  static class StopTimeTripWithoutTimesNotice extends ValidationNotice {
+    private final int csvRowNumber;
+    private final String tripId;
+    private final long stopSequence;
+    private final String specifiedField;
+
+    StopTimeTripWithoutTimesNotice(GtfsStopTime stopTime, String specifiedField) {
+      super(SeverityLevel.ERROR);
+      this.csvRowNumber = stopTime.csvRowNumber();
+      this.tripId = stopTime.tripId();
+      this.stopSequence = stopTime.stopSequence();
+      this.specifiedField = specifiedField;
     }
   }
 }
