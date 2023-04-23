@@ -44,4 +44,4 @@ jobs:
         shell: bash
         run: |
           ENV_FILE=web/pipeline/${ENV_NAME}.env source web/pipeline/env-file.sh
-          ./gradlew webCD
+          ./gradlew webCD -x aggregateJavadocJar
