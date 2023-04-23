@@ -4,7 +4,13 @@ plugins {
 
 def WEB_DEPLOY_CLIENT_BUCKET = System.getenv("WEB_DEPLOY_CLIENT_BUCKET")
 
+task webClientNodeModule (type: Exec) {
+  outputs.dir(file('./node_modules'))
+  commandLine 'npm', 'install'
+}
+
 task webTest (type: Exec) {
+  dependsOn webClientNodeModules
   // lint is currently failing
   //commandLine 'npm', 'run', 'lint'
   commandLine 'npm', 'run', 'check'
@@ -12,6 +18,7 @@ task webTest (type: Exec) {
 
 task webBuild (type: Exec) {
   outputs.dir(file('./build'))
+  dependsOn   webClientNodeModules
   commandLine 'npm', 'run', 'build'
 }
 
