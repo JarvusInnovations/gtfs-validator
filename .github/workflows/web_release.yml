@@ -32,6 +32,8 @@ jobs:
 
       # for npm
       - uses: actions/setup-node@v3
+        with:
+          node-version: 16
 
       - uses: google-github-actions/setup-gcloud@v0
         with:
