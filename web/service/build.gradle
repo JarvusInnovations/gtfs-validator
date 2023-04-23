@@ -112,7 +112,7 @@ task webTest {
 
 task webBuild {
   dependsOn   webSecrets
-  finalizedBy build
+  finalizedBy ':build'
 }
 
 task webDeploy (type: Exec) {
