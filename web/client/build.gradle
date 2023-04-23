@@ -9,8 +9,18 @@ task webClientNodeModules (type: Exec) {
   commandLine 'npm', 'install'
 }
 
-task webTest (type: Exec) {
+task webClientRules (type: Copy) {
+  from '../../RULES.md'
+  into 'static'
+}
+
+task webClientSetup {
   dependsOn webClientNodeModules
+  dependsOn webClientRules
+}
+
+task webTest (type: Exec) {
+  dependsOn webClientSetup
   // lint is currently failing
   //commandLine 'npm', 'run', 'lint'
   commandLine 'npm', 'run', 'check'
@@ -18,7 +28,7 @@ task webTest (type: Exec) {
 
 task webBuild (type: Exec) {
   outputs.dir(file('./build'))
-  dependsOn   webClientNodeModules
+  dependsOn   webClientSetup
   commandLine 'npm', 'run', 'build'
 }
 
